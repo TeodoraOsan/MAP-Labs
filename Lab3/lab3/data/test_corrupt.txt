@@ -1,0 +1,5 @@
+1;Ion;Popescu
+linia_asta_nu_are_suficiente_campuri
+abc;Vasile;Ionescu
+4;;NumeFaraPrenume
+5;Mihai;Pop;camp_in_plus_inutil
