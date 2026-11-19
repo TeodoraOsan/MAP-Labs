@@ -9,9 +9,12 @@ import org.example.domain.exception.ValidationException;
 import org.example.service.CommunityService;
 import org.example.service.FriendshipService;
 import org.example.service.UserService;
+import org.example.util.paging.Page;
+import org.example.util.paging.Pageable;
 
 import java.util.List;
 import java.util.Scanner;
+import java.util.function.Function;
 
 /**
  *Console interface providing interactive user management and network operations
@@ -22,14 +25,17 @@ public class ConsoleUI {
     private final FriendshipService friendshipService;
     private final CommunityService communityService;
     private final Scanner scanner;
+    private final int pageSize;
 
     public ConsoleUI(UserService userService,
                      FriendshipService friendshipService,
-                     CommunityService communityService) {
+                     CommunityService communityService,
+                     int pageSize) {
         this.userService = userService;
         this.friendshipService = friendshipService;
         this.communityService = communityService;
         this.scanner = new Scanner(System.in);
+        this.pageSize = pageSize;
     }
 
     private void printMenu() {
@@ -42,6 +48,8 @@ public class ConsoleUI {
         System.out.println("6. Show friendships");
         System.out.println("7. Number of communities");
         System.out.println("8. Most sociable community");
+        System.out.println("9. Show users (paged)");
+        System.out.println("10. Show friends (paged)");
         System.out.println("0. Exit");
     }
 
@@ -78,6 +86,12 @@ public class ConsoleUI {
                     break;
                 case "8":
                     uiShowMostSociableCommunity();
+                    break;
+                case "9":
+                    showUsersPaged();
+                    break;
+                case "10":
+                    showFriendsPaged();
                     break;
                 case "0":
                     return;
@@ -206,5 +220,64 @@ public class ConsoleUI {
         community.stream()
                 .map(u -> "ID: " + u.getId() + " - " + u.getFirstName() + " " + u.getLastName())
                 .forEach(System.out::println);
+    }
+
+    private void navigatePages(String title, Function<Pageable, Page<User>> pageFetcher) {
+        int currentPage = 0;
+
+        while (true) {
+            Page<User> page = pageFetcher.apply(new Pageable(currentPage, pageSize));
+            int totalElements = page.getTotalNumberOfElements();
+            int totalPages = (int) Math.ceil((double) totalElements / pageSize);
+
+            System.out.println("\n=== " + title + " ===");
+            if (totalElements == 0) {
+                System.out.println("No records found. (Page 0 of 0)");
+                return;
+            }
+
+            System.out.println("Page " + (currentPage + 1) + " of " + totalPages + " (Total: " + totalElements + ")");
+            page.getElementsOnPage().forEach(System.out::println);
+
+            System.out.print("[p] Previous | [n] Next | [q] Quit: ");
+            String cmd = scanner.nextLine().trim().toLowerCase();
+
+            if (cmd.equals("n")) {
+                if (currentPage + 1 < totalPages) {
+                    currentPage++;
+                } else {
+                    System.out.println("You are already on the last page.");
+                }
+            } else if (cmd.equals("p")) {
+                if (currentPage > 0) {
+                    currentPage--;
+                } else {
+                    System.out.println("You are already on the first page.");
+                }
+            } else if (cmd.equals("q")) {
+                break;
+            }
+        }
+    }
+
+    private void showUsersPaged() {
+        try {
+            navigatePages("Users List", userService::getUsersOnPage);
+        } catch (UnsupportedOperationException | IllegalArgumentException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private void showFriendsPaged() {
+        try {
+            System.out.print("Enter user ID: ");
+            Long userId = Long.parseLong(scanner.nextLine().trim());
+            navigatePages("Friends of user " + userId,
+                    pageable -> friendshipService.getFriendsOnPage(userId, pageable));
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid ID!");
+        } catch (UnsupportedOperationException | IllegalArgumentException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
     }
 }

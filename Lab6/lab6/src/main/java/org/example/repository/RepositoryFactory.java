@@ -27,6 +27,7 @@ public class RepositoryFactory {
     private String dbUrl;
     private String dbUser;
     private String dbPassword;
+    private int pageSize;
 
     private final Map<RepositoryType, Function<Validator<User>, Repository<Long, User>>> userRepoProviders = new EnumMap<>(RepositoryType.class);
     private final Map<RepositoryType, Function<Validator<Friendship>, Repository<Tuple<Long, Long>, Friendship>>> friendshipRepoProviders = new EnumMap<>(RepositoryType.class);
@@ -123,12 +124,14 @@ public class RepositoryFactory {
             validateProperty(properties, "db.url");
             validateProperty(properties, "db.user");
             validateProperty(properties, "db.password");
+            validateProperty(properties, "page.size");
 
             this.usersFilePath = properties.getProperty("repo.file.users");
             this.friendshipsFilePath = properties.getProperty("repo.file.friendships");
             this.dbUrl = properties.getProperty("db.url");
             this.dbUser = properties.getProperty("db.user");
             this.dbPassword = properties.getProperty("db.password");
+            this.pageSize = Integer.parseInt(properties.getProperty("page.size", "4").trim());
         } catch (IllegalArgumentException e) {
             throw new RepositoryException("Unknown repository type specified: " + typeStr, e);
         }
@@ -162,5 +165,9 @@ public class RepositoryFactory {
             throw new RepositoryException("Unsupported repository type: " + repoType);
         }
         return provider.apply(validator);
+    }
+
+    public int getPageSize() {
+        return pageSize;
     }
 }

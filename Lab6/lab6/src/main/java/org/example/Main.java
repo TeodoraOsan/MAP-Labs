@@ -38,7 +38,8 @@ public class Main {
         UserService userService = new UserService(userRepository, friendshipService);
         CommunityService communityService = new CommunityService(userRepository, friendshipRepository);
 
-        ConsoleUI consoleUI = new ConsoleUI(userService, friendshipService, communityService);
+        int pageSize = factory.getPageSize();
+        ConsoleUI consoleUI = new ConsoleUI(userService, friendshipService, communityService, pageSize);
         consoleUI.run();
     }
 }
