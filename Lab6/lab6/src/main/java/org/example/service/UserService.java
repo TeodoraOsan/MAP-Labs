@@ -90,4 +90,21 @@ public class UserService {
                 .findFirst()
                 .map(User::getId);
     }
+
+    /**
+     * Retrieves a page of users.
+     * @param pageable pagination parameters (page number and page size)
+     * @return a Page containing the users on the requested page and the total user count
+     * @throws IllegalArgumentException      if pageable is null, pageNumber < 0, or pageSize <= 0
+     * @throws UnsupportedOperationException if the repository does not support pagination
+     */
+    public Page<User> getUsersOnPage(Pageable pageable) {
+        if (pageable == null || pageable.getPageNumber() < 0 || pageable.getPageSize() <= 0) {
+            throw new IllegalArgumentException("Invalid pagination parameters: pageNumber must be >= 0 and pageSize > 0");
+        }
+        if (userRepository instanceof PagingRepository<Long, User> pagingRepo) {
+            return pagingRepo.findAllOnPage(pageable);
+        }
+        throw new UnsupportedOperationException("Pagination is only supported for DATABASE repositories.");
+    }
 }

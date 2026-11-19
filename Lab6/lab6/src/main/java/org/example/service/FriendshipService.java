@@ -86,4 +86,22 @@ public class FriendshipService {
     public List<Friendship> getAllFriendships() {
         return friendshipRepository.findAll();
     }
+
+    /**
+     * Retrieves a page of friends for a given user.
+     * @param userId   the ID of the user whose friends are requested
+     * @param pageable pagination parameters (page number and page size)
+     * @return a Page containing the user's friends on the requested page and the total friend count
+     * @throws IllegalArgumentException      if userId is null, pageable is null, pageNumber < 0, or pageSize <= 0
+     * @throws UnsupportedOperationException if the repository does not support pagination
+     */
+    public Page<User> getFriendsOnPage(Long userId, Pageable pageable) {
+        if (userId == null || pageable == null || pageable.getPageNumber() < 0 || pageable.getPageSize() <= 0) {
+            throw new IllegalArgumentException("Invalid pagination parameters.");
+        }
+        if (friendshipRepository instanceof FriendshipDbRepository dbRepo) {
+            return dbRepo.findFriendsOnPage(userId, pageable);
+        }
+        throw new UnsupportedOperationException("Pagination is only supported for DATABASE repositories.");
+    }
 }
